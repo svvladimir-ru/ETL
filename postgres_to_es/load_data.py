@@ -12,9 +12,9 @@ pp = pprint.PrettyPrinter(indent=4)
 
 
 def load_from_postgres(pg_conn: _connection):
-    """Основной метод загрузки данных из SQLite в Postgres"""
+    """Основной метод загрузки данных из Postgres в ES"""
     postgres_saver = PostgresLoader(pg_conn)
-    pp.pprint(postgres_saver.loader())
+    data = postgres_saver.loader()
 
     # data = sqlite_loader.load_movies()
     # postgres_saver.save_all_data(data)
@@ -27,6 +27,5 @@ if __name__ == '__main__':
             load_from_postgres(pg_conn)
 
         pg_conn.close()
-
 
     query_postgres()
