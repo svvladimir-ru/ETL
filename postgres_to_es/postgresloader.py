@@ -3,6 +3,7 @@ import psycopg2
 import time
 from psycopg2.extras import DictCursor
 from psycopg2 import sql
+from utils import backoff
 import pprint
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -51,9 +52,14 @@ dsl = {
     'port': 5432,
 }
 
-if __name__ == '__main__':
+
+@backoff()
+def query_postgres():
 
     with psycopg2.connect(**dsl, cursor_factory=DictCursor) as pg_conn:
         pp.pprint(PostgresSaver(pg_conn).loader())
 
-    pg_conn.close()
+
+
+
+query_postgres()
