@@ -11,3 +11,8 @@ dsl = {
     'host': os.environ.get('PG_HOST'),
     'port': os.environ.get('POSTGRES_PORT'),
 }
+
+es_conf = [{
+    'host': os.getenv('ES_HOST'),
+    'port': os.getenv('ES_PORT'),
+}]

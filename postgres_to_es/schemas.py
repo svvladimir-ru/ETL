@@ -1,76 +1,21 @@
 from uuid import UUID
 
-from datetime import datetime
-from typing import Union, Optional, List
-from pydantic import BaseModel, Field
+from typing import Union, Optional, List, Dict
+from pydantic import BaseModel
 
-
-class DSNSettings(BaseModel):
-    host: str
-    port: int
-    dbname: str
-    password: str
-    user: str
-
-
-class PostgresSettings(BaseModel):
-    dsn: DSNSettings
-    limit: Optional[int]
-    order_field: List[str]
-    state_field: List[str]
-    fetch_delay: Optional[float]
-    state_file_path: Optional[str]
-    sql_query: str
-
-
-class Config(BaseModel):
-    film_work_pg: PostgresSettings
-
-
-config = Config.parse_file('config.json')
-
-print(config.film_work_pg.dsn.user)
+OBJ_ID   = Union[str, str, UUID]
+OBJ_NAME = Union[str, str, UUID]
 
 
 class FilmWorkWithoutField(BaseModel):
-    id: Union[int, str, UUID]
-    title: str
-    description: str
-    creation_date: datetime
-    certificate: str
-    file_path: str
-    type: str
-    created_at: datetime
-    updated_at: datetime
-    rating: float = Field(default=0.0)
-
-
-class GenreWithoutField(BaseModel):
-    id: Union[int, str, UUID]
-    name: str
-    description: str
-    created_at: datetime
-    updated_at: datetime
-
-
-class GenreFilmWorkWithoutField(BaseModel):
-    id: Union[int, str, UUID]
-    film_work_id: Union[int, str, UUID]
-    genre_id: Union[int, str, UUID]
-    created_at: datetime
-
-
-class PersonWithoutField(BaseModel):
-    id: UUID
-    full_name: str
-    birth_date: datetime
-    created_at: datetime
-    updated_at: datetime
-
-
-class PersonFilmWorkWithoutField(BaseModel):
-    film_work_id: Union[int, str, UUID]
-    person_id: Union[int, str, UUID]
-    role: str
-    created_at: datetime
-    id: Union[int, str, UUID]
+    id              : Union[int, str, UUID]
+    imdb_rating     : Optional[float] = None
+    title           : str
+    description     : Optional[str] = None
+    actors_names    : Optional[List[str]] = None
+    writers_names   : Optional[List[str]] = None
+    directors_names : Optional[List[str]] = None
+    genres_names    : Optional[List[str]] = None
+    actors          : Optional[List[Dict[OBJ_ID, OBJ_NAME]]] = None
+    writers         : Optional[List[Dict[OBJ_ID, OBJ_NAME]]] = None
+    directors       : Optional[List[Dict[OBJ_ID, OBJ_NAME]]] = None
