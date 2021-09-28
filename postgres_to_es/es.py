@@ -16,7 +16,7 @@ class EsSaver:
 
     def load(self):
         while self.query:
-            rows = (i for i in self.query)
+            rows = iter(self.query)
             for row in rows:
                 self.movies_list.extend(
                     [
@@ -24,13 +24,16 @@ class EsSaver:
                             {
                                 'index': {
                                     '_index': 'movies',
-                                    '_id': row.id
+                                    '_id': row['id']
                                 }
                             }
                         ),
                         json.dumps(row),
                     ]
                 )
-            next(rows)
                 self.movies_list.extend(row)
+                if len(self.movies_list) == 50:
+                    self.es.bulk(body='\n'.join(self.movies_list) + '\n', index='movies')
+                    self.movies_list().clear()
+
         return self.movies_list

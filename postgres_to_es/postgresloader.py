@@ -1,28 +1,22 @@
 from psycopg2.extensions import connection as _connection
 import psycopg2
 from datetime import datetime
-import time
 from psycopg2.extensions import connection as _connection
 from psycopg2.extras import DictCursor, Json
 from config import dsl, es_conf
 from state import JsonFileStorage, State
-from uuid import uuid4
 from big_awful_request import big_request
-import pprint
 from schemas import FilmWorkWithoutField
-import json
-
-
-pp = pprint.PrettyPrinter(indent=4)
 
 
 class PostgresLoader:
-    def __init__(self, pg_conn: _connection, state_bd=False):
+    def __init__(self, pg_conn: _connection, state_key='my_key'):
         self.conn = pg_conn
         self.cursor = self.conn.cursor(cursor_factory=DictCursor)
         self.batch_size = 100
-        self.state_bd = state_bd
-        # self.time =
+        self.key = state_key
+        self.state_key = State(JsonFileStorage('PostgresData.txt')).get_state(state_key)
+        self.data = []
 
     def load_person_id(self) -> str:
         """Вложенный запрос на получение id персон, думаю функция тут лишняя """
@@ -30,10 +24,10 @@ class PostgresLoader:
                             FROM content.person
                             GROUP BY id
                             '''
-        if self.state_bd:
+        if self.state_key is None:
             return load_person_id
-        inx = load_person_id.find('ORDER')
-        return f'{load_person_id[inx:]} WHERE updated_at > {time}\n {load_person_id[:inx]}'
+        inx = load_person_id.find('GROUP')
+        return f"{load_person_id[:inx]} WHERE updated_at > '{self.state_key}' {load_person_id[inx:]}"
 
     def load_film_work_id(self) -> str:
         """Вложенный запрос на получение id фильмворков"""
@@ -43,11 +37,7 @@ class PostgresLoader:
                             WHERE pfw.person_id IN ({self.load_person_id()})
                             GROUP BY fw.id
                             '''
-        if self.state_bd:
-            return load_film_id
-
-        inx = load_film_id.find('ORDER')
-        return f'{load_film_id[inx:]} AND updated_at > {time}\n {load_film_id[:inx]}'
+        return load_film_id
 
     def loader(self) -> list:
         """Запрос на получение всех данных"""
@@ -62,25 +52,19 @@ class PostgresLoader:
                                     GROUP BY fw.id, fw.title, fw.description, fw.rating, fw.type,
                                              fw.updated_at, pfw.role, p.id, p.full_name, g.name
                                     ORDER BY fw.updated_at;'''
-        if self.state_bd:
+        if self.state_key is None:
             self.cursor.execute(full_load)
         else:
-            inx = full_load.rfind('IN')
-            self.cursor.execute(f'{full_load[inx + 1:]} (updated_at > {time}) AND {full_load[:inx]}')
+            inx = full_load.rfind(f'WHERE fw.id IN ({self.load_film_work_id()})')
+            self.cursor.execute(f"{full_load[:inx]} AND fw.updated_at > '{self.state_key}' {full_load[inx:]}")
 
         while True:
-            rows = self.cursor.fetchmany()
+            rows = self.cursor.fetchmany(self.batch_size)
             if not rows:
                 break
 
             for row in rows:
-                # print(dict(row))
-                # try:
-                # a = {}
-                #
-                # a[f"{str(datetime.now()).replace(' ', '')}"]= dict(row)
-                # pp.pprint(a)
-                c = FilmWorkWithoutField(
+                d = FilmWorkWithoutField(
                     id              = dict(row).get('id'),
                     imdb_rating     = dict(row).get('rating'),
                     title           = dict(row).get('title'),
@@ -93,23 +77,7 @@ class PostgresLoader:
                     writers         = dict(row).get('writers'),
                     directors       = dict(row).get('directors'),
                 )
-                a = {}
-                a[f"{str(datetime.now()).replace(' ', '')}"] = c.dict()
+                self.data.append(d.dict())
+        State(JsonFileStorage('PostgresData.txt')).set_state(str(self.key), value=str(datetime.now()))
 
-                print(json.dumps(a))
-                # State(JsonFileStorage(file_path='PostgresData.json')).set_state(
-                #     key=f"{str(datetime.now()).replace(' ', '')}", value=c.dict())
-                # except:
-                #     with open('error.txt' 'w') as file:
-                #         file.writelines(row)
-            # i = {}
-            # i[f"{str(datetime.now()).replace(' ', '')}"] = rows
-            # pp.pprint(i)
-            # count = 0
-            # if count == 2:
-            #     break
-            # count += 1
-            break
-            # State(JsonFileStorage(file_path='PostgresData.json')).set_state(
-            #     key=f"{str(datetime.now()).replace(' ', '')}", value=rows)
-
+        return self.data
