@@ -1,19 +1,12 @@
-from psycopg2.extensions import connection as _connection
-import psycopg2
 import time
-from psycopg2.extras import DictCursor
-from psycopg2 import sql
-from utils import backoff
-import pprint
-
-pp = pprint.PrettyPrinter(indent=4)
+from psycopg2.extensions import connection as _connection
 
 
 class PostgresLoader:
     def __init__(self, pg_conn: _connection):
         self.conn = pg_conn
         self.cursor = self.conn.cursor()
-        self.counter = 0
+        self.batch_size = 100
 
     def load_person_id(self, time=None) -> str:
         load_person_id = f'''SELECT id
@@ -41,11 +34,11 @@ class PostgresLoader:
                                         LEFT JOIN content.genre as g ON g.id = gfw.genre_id
                                         WHERE fw.id IN ({self.load_film_work_id()});''')
 
-        # data = self.cursor.fetchall()
-        data = 1
+        data = []
+        while True:
+            rows = self.cursor.fetchmany(self.batch_size)
+            data.append(rows)
+            if not rows:
+                break
 
-        for i in self.cursor.fetchall():
-            print(i)
-            data +=1
-        print(data)
         return data
