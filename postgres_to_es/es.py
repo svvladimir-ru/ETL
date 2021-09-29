@@ -12,8 +12,11 @@ class EsSaver:
     def create_index(self, file_path):
         with open(file_path, 'r') as file:
             f = json.load(file)
-        self.client.index(index='movies', body=f)
+        if self.client.indices.exists(index="movies"):
+            return None
 
+        self.client.index(index='movies', body=f)
+        
     @backoff()
     def load_data(self):
         self.client.bulk(body='\n'.join(self.movies_list) + '\n', index='movies')

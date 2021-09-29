@@ -25,13 +25,3 @@ def backoff(start_sleep_time=0.1, factor=2, border_sleep_time=3):
         return inner
 
     return func_wrapper
-
-
-def coroutine(func):
-    @wraps(func)
-    def inner(*args, **kwargs):
-        fn = func(*args, **kwargs)
-        next(fn)
-        return fn
-
-    return inner

@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     @backoff()
     def save_elastic():
-        # EsSaver(es_conf).create_index('schemas.json')
+        EsSaver(es_conf).create_index('schemas.json')
         EsSaver(es_conf).load(query_postgres())
 
     save_elastic()
