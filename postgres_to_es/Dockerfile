@@ -4,4 +4,4 @@ COPY requirements.txt /sites
 RUN pip install -r /sites/requirements.txt --no-cache-dir
 COPY . /sites
 EXPOSE 8000
-CMD ["python", "load_data.py"]
+CMD python /sites/load_data.py

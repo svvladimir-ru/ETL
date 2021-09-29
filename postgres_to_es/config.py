@@ -1,8 +1,14 @@
 import os
+import logging
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Logging settings
+logging.basicConfig(filename='etl.log', level=logging.INFO)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 dsl = {
     'dbname': os.getenv('POSTGRES_DB'),

@@ -20,11 +20,11 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
-
+PostgresData.txt
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
-
+*.log
 # Unit test / coverage reports
 .pytest_cache/
 htmlcov/
@@ -36,7 +36,7 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
-
+volumes/
 # dotenv
 .env
 

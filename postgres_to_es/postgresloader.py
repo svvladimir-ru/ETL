@@ -1,15 +1,13 @@
-from psycopg2.extensions import connection as _connection
-import psycopg2
 from datetime import datetime
 from psycopg2.extensions import connection as _connection
-from psycopg2.extras import DictCursor, Json
-from config import dsl, es_conf
+from psycopg2.extras import DictCursor
 from state import JsonFileStorage, State
 from big_awful_request import big_request
 from schemas import FilmWorkWithoutField
 
 
 class PostgresLoader:
+    """Класс для выгрузки данных из postgres"""
     def __init__(self, pg_conn: _connection, state_key='my_key'):
         self.conn = pg_conn
         self.cursor = self.conn.cursor(cursor_factory=DictCursor)
@@ -24,10 +22,7 @@ class PostgresLoader:
                             FROM content.person
                             GROUP BY id
                             '''
-        if self.state_key is None:
-            return load_person_id
-        inx = load_person_id.find('GROUP')
-        return f"{load_person_id[:inx]} WHERE updated_at > '{self.state_key}' {load_person_id[inx:]}"
+        return load_person_id
 
     def load_film_work_id(self) -> str:
         """Вложенный запрос на получение id фильмворков"""
@@ -37,7 +32,11 @@ class PostgresLoader:
                             WHERE pfw.person_id IN ({self.load_person_id()})
                             GROUP BY fw.id
                             '''
-        return load_film_id
+        if self.state_key is None:
+            return load_film_id
+        inx = load_film_id.rfind(f'WHERE pfw.person_id IN ({self.load_person_id()})')
+        return f"{load_film_id[:inx]} AND updated_at > '{self.state_key}' {load_film_id[inx:]}"
+
 
     def loader(self) -> list:
         """Запрос на получение всех данных"""
@@ -51,11 +50,7 @@ class PostgresLoader:
                                     WHERE fw.id IN ({self.load_film_work_id()})
                                     GROUP BY fw.id
                                     ORDER BY fw.updated_at;'''
-        if self.state_key is None:
-            self.cursor.execute(full_load)
-        else:
-            inx = full_load.rfind(f'WHERE fw.id IN ({self.load_film_work_id()})')
-            self.cursor.execute(f"{full_load[:inx]} AND fw.updated_at > '{self.state_key}' {full_load[inx:]}")
+        self.cursor.execute(full_load)
 
         while True:
             rows = self.cursor.fetchmany(self.batch_size)

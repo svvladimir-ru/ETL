@@ -20,7 +20,7 @@ services:
     ports:
       - "5432:5432"
 
-  es01:
+  ma_es01:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
     container_name: es01
     environment:
@@ -37,9 +37,12 @@ services:
       restart_policy:
         condition: any
         delay: 5s
-        window: 120s
+        window: 30s
     env_file:
       - movies_admin/.env
+    volumes:
+      - ./postgres_to_es/volumes/etl.log:/sites/*.log:ro
+      - ./postgres_to_es/volumes/PostgresData.txt:/sites/PostgresData.txt:ro
 
   ma_web:
     build: .
