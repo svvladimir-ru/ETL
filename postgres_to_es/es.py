@@ -1,22 +1,26 @@
 import json
-from datetime import datetime
+import time
 from elasticsearch import Elasticsearch
+from utils import backoff
 
 
 class EsSaver:
-    def __init__(self, host: list, query: list):
+    def __init__(self, host: list):
         self.client = Elasticsearch(host)
-        self.query = query
         self.movies_list = []
 
     def create_index(self, file_path):
         with open(file_path, 'r') as file:
             f = json.load(file)
-            self.client.index(f)
+        self.client.index(index='movies', body=f)
 
-    def load(self):
-        while self.query:
-            rows = iter(self.query)
+    @backoff()
+    def load_data(self):
+        self.client.bulk(body='\n'.join(self.movies_list) + '\n', index='movies')
+
+    def load(self, query):
+        while query :
+            rows = iter(query)
             for row in rows:
                 self.movies_list.extend(
                     [
@@ -31,9 +35,8 @@ class EsSaver:
                         json.dumps(row),
                     ]
                 )
-                self.movies_list.extend(row)
                 if len(self.movies_list) == 50:
-                    self.es.bulk(body='\n'.join(self.movies_list) + '\n', index='movies')
-                    self.movies_list().clear()
-
-        return self.movies_list
+                    self.load_data()
+                    self.movies_list.clear()
+            self.load_data()
+            break

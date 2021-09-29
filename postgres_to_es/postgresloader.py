@@ -49,8 +49,7 @@ class PostgresLoader:
                                     LEFT JOIN content.genre_film_work as gfw ON gfw.film_work_id = fw.id
                                     LEFT JOIN content.genre as g ON g.id = gfw.genre_id
                                     WHERE fw.id IN ({self.load_film_work_id()})
-                                    GROUP BY fw.id, fw.title, fw.description, fw.rating, fw.type,
-                                             fw.updated_at, pfw.role, p.id, p.full_name, g.name
+                                    GROUP BY fw.id
                                     ORDER BY fw.updated_at;'''
         if self.state_key is None:
             self.cursor.execute(full_load)

@@ -20,16 +20,16 @@ def load_from_postgres(pg_conn: _connection) -> list:
 
 
 if __name__ == '__main__':
-    # @backoff()
+    @backoff()
     def query_postgres():
         with psycopg2.connect(**dsl, cursor_factory=DictCursor) as pg_conn:
             load_pq = load_from_postgres(pg_conn)
         pg_conn.close()
         return load_pq
 
-    # @backoff()
+    @backoff()
     def save_elastic():
-        a = EsSaver(es_conf, query_postgres())
-        print(a.load())
+        # EsSaver(es_conf).create_index('schemas.json')
+        EsSaver(es_conf).load(query_postgres())
 
     save_elastic()

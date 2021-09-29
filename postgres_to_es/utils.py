@@ -11,7 +11,7 @@ def backoff(start_sleep_time=0.1, factor=2, border_sleep_time=3):
             count = 0
             while True:
                 try:
-                    return func()
+                    return func(*args, **kwargs)
                 except Exception:
                     time.sleep(t)
                     if t >= border_sleep_time:
@@ -20,6 +20,7 @@ def backoff(start_sleep_time=0.1, factor=2, border_sleep_time=3):
                         t *= factor
                     count += 1
                     print(f'Попытка подключения №{count}')
+                    continue
 
         return inner
 
