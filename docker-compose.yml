@@ -31,6 +31,15 @@ services:
     ports:
       - "9200:9200"
 
+  ma_etl:
+    build: postgres_to_es/
+    deploy:
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+    env_file:
+      - movies_admin/.env
 
   ma_web:
     build: .
