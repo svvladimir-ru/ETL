@@ -17,7 +17,6 @@ docker-compose up --build -d ma_nginx
 echo "Запуск ETL"
 mkdir postgres_to_es/volumes
 mkdir ./elasticdb
-touch postgres_to_es/volumes/PostgresData.txt
 touch postgres_to_es/volumes/etl.log
 docker-compose up --build -d ma_es01
 docker-compose up --build -d ma_etl

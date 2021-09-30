@@ -13,7 +13,7 @@ class PostgresLoader:
         self.cursor = self.conn.cursor(cursor_factory=DictCursor)
         self.batch_size = 100
         self.key = state_key
-        self.state_key = State(JsonFileStorage('PostgresData.txt')).get_state(state_key)
+        self.state_key = State(JsonFileStorage('states/PostgresData.txt')).get_state(state_key)
         self.data = []
 
     def load_person_id(self) -> str:
@@ -36,7 +36,6 @@ class PostgresLoader:
             return load_film_id
         inx = load_film_id.rfind(f'WHERE pfw.person_id IN ({self.load_person_id()})')
         return f"{load_film_id[:inx]} AND updated_at > '{self.state_key}' {load_film_id[inx:]}"
-
 
     def loader(self) -> list:
         """Запрос на получение всех данных"""
@@ -72,6 +71,6 @@ class PostgresLoader:
                     directors       = dict(row).get('directors'),
                 )
                 self.data.append(d.dict())
-        State(JsonFileStorage('PostgresData.txt')).set_state(str(self.key), value=str(datetime.now()))
+        State(JsonFileStorage('states/PostgresData.txt')).set_state(str(self.key), value=str(datetime.now()))
 
         return self.data
