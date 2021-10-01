@@ -71,6 +71,5 @@ class PostgresLoader:
                     directors       = dict(row).get('directors'),
                 )
                 self.data.append(d.dict())
-        State(JsonFileStorage('states/PostgresData.txt')).set_state(str(self.key), value=str(datetime.now()))
 
         return self.data

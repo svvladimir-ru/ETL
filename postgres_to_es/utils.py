@@ -14,15 +14,21 @@ def backoff(start_sleep_time=0.1, factor=2, border_sleep_time=3):
                 try:
                     return func(*args, **kwargs)
                 except Exception:
-                    logging.error('Exception')
                     time.sleep(t)
                     if t >= border_sleep_time:
                         t = border_sleep_time
                     if t < border_sleep_time:
                         t *= factor
+                    logging.error(f'{Exception} \n\n Попытка подключение №{count}')
+                    print(count)
                     count += 1
-                    print(f'Попытка подключения №{count}')
                     continue
+                finally:
+                    if count == 10:
+                        logging.info(
+                            f'Исчерпано максимальное количество подключений={count}.\n В другой раз повезет'
+                        )
+                        break
 
         return inner
 

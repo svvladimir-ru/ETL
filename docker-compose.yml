@@ -46,8 +46,6 @@ services:
     volumes:
       - ./postgres_to_es/volumes/etl.log:/sites/etl.log
       - ./postgres_to_es/volumes/:/sites/states/
-    ports:
-      - "7777:7777"
 
   ma_web:
     build: .

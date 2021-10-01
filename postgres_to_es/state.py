@@ -36,6 +36,8 @@ class JsonFileStorage(BaseStorage):
         try:
             with open(self.file_path, 'r') as f:
                 data = json.load(f)
+                if not data:
+                    return {}
 
             return data
 

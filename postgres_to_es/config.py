@@ -6,9 +6,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Logging settings
-logging.basicConfig(filename='etl.log', level=logging.INFO)
+logging.basicConfig(filename='etl.log', level=os.getenv('LOGGING_LEVEL'))
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(level=os.getenv('LOGGING_LEVEL'))
 
 dsl = {
     'dbname': os.getenv('POSTGRES_DB'),
