@@ -3,9 +3,7 @@ echo "Запуск postgres"
 docker-compose up --build -d ma_postgres
 sleep 5
 echo "Начало загрузки данных в postgres"
-cp .env.sample sqlite_to_postgres/.env
-cp .env.sample movies_admin/.env
-cp .env.sample postgres_to_es/.env
+cp .env.sample .env
 cd sqlite_to_postgres/ || exit
 ../venv/bin/python load_data.py
 cd ..
@@ -19,4 +17,5 @@ mkdir postgres_to_es/volumes
 mkdir ./elasticdb
 touch postgres_to_es/volumes/etl.log
 docker-compose up --build -d ma_es01
+sleep 5
 docker-compose up --build -d ma_etl

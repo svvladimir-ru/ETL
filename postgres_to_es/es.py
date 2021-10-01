@@ -22,7 +22,7 @@ class EsSaver:
         with open(file_path, 'r') as file:
             f = json.load(file)
         if self.client.indices.exists(index="movies"):
-            logger.warning('index movies already exist:')
+            logger.warning(f'{datetime.now()}\n\nindex movies already exist:')
 
         self.client.index(index='movies', body=f)
         

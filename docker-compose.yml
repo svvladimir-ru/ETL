@@ -14,7 +14,7 @@ services:
       - postgres_data:/var/lib/postgresql/data/
       - ./schema_design/db_schema.sql:/docker-entrypoint-initdb.d/db_schema.sql
     env_file:
-      - sqlite_to_postgres/.env
+      - .env
     expose:
       - 5432
     ports:
@@ -42,7 +42,7 @@ services:
       - ma_postgres
       - ma_es01
     env_file:
-      - movies_admin/.env
+      - .env
     volumes:
       - ./postgres_to_es/volumes/etl.log:/sites/etl.log
       - ./postgres_to_es/volumes/:/sites/states/
@@ -54,7 +54,7 @@ services:
     depends_on:
       - ma_postgres
     env_file:
-      - movies_admin/.env
+      - .env
     volumes:
       - static_volume:/sites/static/
 

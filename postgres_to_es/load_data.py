@@ -1,6 +1,7 @@
 import psycopg2
 import logging
 
+from datetime import datetime
 from contextlib import closing
 
 from psycopg2.extensions import connection as _connection
@@ -26,12 +27,12 @@ if __name__ == '__main__':
     @backoff()
     def query_postgres() -> list:
         with closing(psycopg2.connect(**dsl, cursor_factory=DictCursor)) as pg_conn:
-            logger.info('PostgreSQL connection is open. Start load data')
+            logger.info(f'{datetime.now()}\n\nPostgreSQL connection is open. Start load data')
             load_pq = load_from_postgres(pg_conn)
         return load_pq
 
     def save_elastic() -> None:
-        logger.info('ElasticSearch connection is open. Start load data')
+        logger.info(f'{datetime.now()}\n\nElasticSearch connection is open. Start load data')
         EsSaver(es_conf).create_index('schemas.json')
         EsSaver(es_conf).load(query_postgres())
 
