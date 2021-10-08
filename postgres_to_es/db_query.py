@@ -3,6 +3,16 @@ load_person_q = f'''SELECT DISTINCT id
                     GROUP BY id
                     '''
 
+load_person_role = f'''SELECT DISTINCT id, full_name, birth_date,
+                    ARRAY_AGG(role) FILTER (WHERE role = 'actor') AS actor,
+                    ARRAY_AGG(role) FILTER (WHERE role = 'writer') AS writer,
+                    ARRAY_AGG(role) FILTER (WHERE role = 'director') AS director,
+                    FROM content.person
+                    LEFT JOIN content.person_film_work ON id = person_id
+                    GROUP BY id
+                    '''
+
+
 load_film_id = f'''SELECT DISTINCT fw.id
                     FROM content.film_work as fw
                     LEFT JOIN content.person_film_work as pfw ON pfw.film_work_id = fw.id
