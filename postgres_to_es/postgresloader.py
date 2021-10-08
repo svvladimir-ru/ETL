@@ -2,8 +2,8 @@ from datetime import datetime
 from psycopg2.extensions import connection as _connection
 from psycopg2.extras import DictCursor
 from state import JsonFileStorage, State
-from big_awful_request import big_request
-from schemas import FilmWorkWithoutField
+from db_query import load_person_q, load_film_id, full_load, query_all_genre
+from schemas import Film, Genre, Person
 
 
 class PostgresLoader:
@@ -13,43 +13,44 @@ class PostgresLoader:
         self.cursor = self.conn.cursor(cursor_factory=DictCursor)
         self.batch_size = 100
         self.key = state_key
-        self.state_key = State(JsonFileStorage('states/PostgresData.txt')).get_state(state_key)
+        self.state_key = State(JsonFileStorage('PostgresDataState.txt')).get_state(state_key)
         self.data = []
 
     def load_person_id(self) -> str:
         """Вложенный запрос на получение id персон, думаю функция тут лишняя """
-        load_person_id = f'''SELECT DISTINCT id
-                            FROM content.person
-                            GROUP BY id
-                            '''
-        return load_person_id
+        return load_person_q
 
     def load_film_work_id(self) -> str:
-        """Вложенный запрос на получение id фильмворков"""
-        load_film_id = f'''SELECT DISTINCT fw.id
-                            FROM content.film_work as fw
-                            LEFT JOIN content.person_film_work as pfw ON pfw.film_work_id = fw.id
-                            WHERE pfw.person_id IN ({self.load_person_id()})
-                            GROUP BY fw.id
-                            '''
+        """Вложенный запрос на получение id film_work"""
+        query = load_film_id % self.load_person_id()
         if self.state_key is None:
-            return load_film_id
-        inx = load_film_id.rfind(f'WHERE pfw.person_id IN ({self.load_person_id()})')
-        return f"{load_film_id[:inx]} AND updated_at > '{self.state_key}' {load_film_id[inx:]}"
+            return query
 
-    def loader(self) -> list:
-        """Запрос на получение всех данных"""
-        full_load = f'''SELECT DISTINCT fw.id, fw.title, fw.description, fw.rating, fw.type,
-                                  fw.updated_at, {big_request}
-                                    FROM content.film_work as fw
-                                    LEFT JOIN content.person_film_work as pfw ON pfw.film_work_id = fw.id
-                                    LEFT JOIN content.person as p ON p.id = pfw.person_id
-                                    LEFT JOIN content.genre_film_work as gfw ON gfw.film_work_id = fw.id
-                                    LEFT JOIN content.genre as g ON g.id = gfw.genre_id
-                                    WHERE fw.id IN ({self.load_film_work_id()})
-                                    GROUP BY fw.id
-                                    ORDER BY fw.updated_at;'''
-        self.cursor.execute(full_load)
+        inx = query.rfind(
+            f'WHERE pfw.person_id IN ({self.load_person_id()})'
+        )
+        return f"{query[:inx]} AND updated_at > '{self.state_key}' {query[inx:]}"
+
+    def load_all_film_work_person(self) -> str:
+        return full_load % self.load_film_work_id()
+
+    def load_genre(self) -> str:
+        if self.state_key is None:
+            return query_all_genre
+        inx = query_all_genre.rfind('FROM content.genre')
+        return f"{query_all_genre[:inx]} WHERE updated_at > '{self.state_key}' {query_all_genre[inx:]}"
+
+    def load_person(self) -> str:
+        inx = load_person_q.find('id')
+        query = f"{load_person_q[:inx + 2]}, full_name, birth_date {load_person_q[inx + 2:]}"
+        if self.state_key is None:
+            return query
+        inx = query.rfind('FROM content.person')
+        return f"{query[:inx]} WHERE updated_at > '{self.state_key}' {query[inx:]}"
+
+    def loader_movies(self) -> list:
+        """Запрос на получение всех данных по фильмам"""
+        self.cursor.execute(self.load_all_film_work_person())
 
         while True:
             rows = self.cursor.fetchmany(self.batch_size)
@@ -57,7 +58,7 @@ class PostgresLoader:
                 break
 
             for row in rows:
-                d = FilmWorkWithoutField(
+                d = Film(
                     id              = dict(row).get('id'),
                     imdb_rating     = dict(row).get('rating'),
                     title           = dict(row).get('title'),
@@ -69,6 +70,44 @@ class PostgresLoader:
                     actors          = dict(row).get('actors'),
                     writers         = dict(row).get('writers'),
                     directors       = dict(row).get('directors'),
+                )
+                self.data.append(d.dict())
+
+        return self.data
+
+    def loader_genre(self) -> list:
+        """Запрос на получение всех жанров"""
+        self.cursor.execute(self.load_genre())
+
+        while True:
+            rows = self.cursor.fetchmany(self.batch_size)
+            if not rows:
+                break
+
+            for row in rows:
+                d = Genre(
+                    id              = dict(row).get('id'),
+                    name            = dict(row).get('name'),
+                    description     = dict(row).get('description'),
+                )
+                self.data.append(d.dict())
+
+        return self.data
+
+    def loader_person(self) -> list:
+        """Запрос на получение всех жанров"""
+        self.cursor.execute(self.load_person())
+
+        while True:
+            rows = self.cursor.fetchmany(self.batch_size)
+            if not rows:
+                break
+
+            for row in rows:
+                d = Person(
+                    id              = dict(row).get('id'),
+                    full_name       = dict(row).get('full_name'),
+                    birth_date      = dict(row).get('birth_date'),
                 )
                 self.data.append(d.dict())
 
