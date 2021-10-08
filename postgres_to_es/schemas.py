@@ -15,6 +15,12 @@ OBJ_NAME = Union[str, str, UUID]
 #     return orjson.dumps(v, default=default).decode()
 
 
+class Roles(BaseModel):
+    actor: Optional[str] = None
+    writers: Optional[str] = None
+    director: Optional[str] = None
+
+
 class Film(BaseModel):
     id              : Union[int, str, UUID]
     imdb_rating     : Optional[float] = None
@@ -43,4 +49,8 @@ class Person(BaseModel):
     id              : Union[int, str, UUID]
     full_name       : str
     birth_date      : Optional[date] = None
-    # roles           : List[str]  # под вопросом
+    roles           : list[dict]  # под вопросом
+
+    # actor = dict(row).get('actor'),
+    # writer = dict(row).get('writer'),
+    # director = dict(row).get('director'),

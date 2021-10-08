@@ -3,7 +3,7 @@ import re
 from psycopg2.extensions import connection as _connection
 from psycopg2.extras import DictCursor
 from state import JsonFileStorage, State
-from db_query import load_person_q, load_film_id, full_load, query_all_genre
+from db_query import load_person_q, load_film_id, full_load, query_all_genre, load_person_role
 from schemas import Film, Genre, Person
 
 
@@ -42,11 +42,11 @@ class PostgresLoader:
 
     def load_person(self) -> str:
         inx = load_person_q.find('id')
-        query = f"{load_person_q[:inx + 2]}, full_name, birth_date {load_person_q[inx + 2:]}"
-        if self.state_key is None:
-            return query
-        inx = re.search('FROM content.person', query).end()
-        return f"{query[:inx]} WHERE updated_at > '{self.state_key}' {query[inx:]}"
+        query = load_person_role
+        # if self.state_key is None:
+        return query
+        # inx = re.search('FROM content.person', query).end()
+        # return f"{query[:inx]} WHERE updated_at > '{self.state_key}' {query[inx:]}"
 
     def loader_movies(self) -> list:
         """Запрос на получение всех данных по фильмам"""
@@ -104,10 +104,17 @@ class PostgresLoader:
                 break
 
             for row in rows:
+                print(row)
                 d = Person(
                     id              = dict(row).get('id'),
                     full_name       = dict(row).get('full_name'),
                     birth_date      = dict(row).get('birth_date'),
+                    roles           = dict(row).get('roles')
+                    # {
+                    #                     'actor'    : (dict(row).get('actor')),  #.replace('{', '').replace('}', ''),
+                    #                     'writer'   : dict(row).get('writer'),  #.replace('{', '').replace('}', ''),
+                    #                     'director' : dict(row).get('director')  #.replace('{', '').replace('}', ''),
+                    #                   }
                 )
                 self.data.append(d.dict())
 
