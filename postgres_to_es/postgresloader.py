@@ -1,4 +1,5 @@
 import re
+import time
 
 from psycopg2.extensions import connection as _connection
 from psycopg2.extras import DictCursor
@@ -43,10 +44,13 @@ class PostgresLoader:
     def load_person(self) -> str:
         inx = load_person_q.find('id')
         query = load_person_role
-        # if self.state_key is None:
-        return query
-        # inx = re.search('FROM content.person', query).end()
-        # return f"{query[:inx]} WHERE updated_at > '{self.state_key}' {query[inx:]}"
+        if self.state_key is None:
+            return query
+        inx = re.search('ON p.id = pfw.person_id', query).end()
+        return f"{query[:inx]} WHERE updated_at > '{self.state_key}' {query[inx:]}"
+
+
+class LoadMovies(PostgresLoader):
 
     def loader_movies(self) -> list:
         """Запрос на получение всех данных по фильмам"""
@@ -61,20 +65,20 @@ class PostgresLoader:
                 d = Film(
                     id              = dict(row).get('id'),
                     imdb_rating     = dict(row).get('rating'),
+                    genre           = dict(row).get('genre'),
                     title           = dict(row).get('title'),
                     description     = dict(row).get('description'),
+                    director        = dict(row).get('director'),
                     actors_names    = dict(row).get('actors_names'),
                     writers_names   = dict(row).get('writers_names'),
-                    directors_names = dict(row).get('directors_names'),
-                    genres_names    = dict(row).get('genre'),
                     actors          = dict(row).get('actors'),
                     writers         = dict(row).get('writers'),
-                    directors       = dict(row).get('directors'),
                 )
                 self.data.append(d.dict())
-
         return self.data
 
+
+class LoadGenre(PostgresLoader):
     def loader_genre(self) -> list:
         """Запрос на получение всех жанров"""
         self.cursor.execute(self.load_genre())
@@ -91,11 +95,12 @@ class PostgresLoader:
                     description     = dict(row).get('description'),
                 )
                 self.data.append(d.dict())
-
         return self.data
 
+
+class LoadPerson(PostgresLoader):
     def loader_person(self) -> list:
-        """Запрос на получение всех жанров"""
+        """Запрос на получение всех персон"""
         self.cursor.execute(self.load_person())
 
         while True:
@@ -104,18 +109,12 @@ class PostgresLoader:
                 break
 
             for row in rows:
-                print(row)
                 d = Person(
                     id              = dict(row).get('id'),
                     full_name       = dict(row).get('full_name'),
                     birth_date      = dict(row).get('birth_date'),
-                    roles           = dict(row).get('roles')
-                    # {
-                    #                     'actor'    : (dict(row).get('actor')),  #.replace('{', '').replace('}', ''),
-                    #                     'writer'   : dict(row).get('writer'),  #.replace('{', '').replace('}', ''),
-                    #                     'director' : dict(row).get('director')  #.replace('{', '').replace('}', ''),
-                    #                   }
+                    role            = dict(row).get('role').replace('{', '').replace('}', ''),
+                    film_ids        = [dict(row).get('film_ids').replace('{', '').replace('}', '')]
                 )
                 self.data.append(d.dict())
-
         return self.data
